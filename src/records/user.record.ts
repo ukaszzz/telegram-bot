@@ -1,20 +1,8 @@
 import { UserModel } from '../schema/user.schema';
-import { Coin, Currencies } from '../models/coin';
 import { getPrice } from '../utils/getPrice';
-
-export async function createUserWithdata (name: string, coins: Coin[], currency: Currencies
-): Promise<void> {
-
-	const user = new UserModel({
-		name,
-		coins,
-		currency
-	});
-	await user.save();
-
-	console.log(user.name, user.currency, user.coins
-	);
-};
+import { checkIfUserExist } from '../utils/checkIsUserExist';
+import { createUserWithdata } from '../utils/createNewUser';
+import { Coin } from '../models/coin';
 
 export async function checkCoinsValue (UserName: string): Promise<string> {
 
@@ -30,11 +18,21 @@ export async function checkCoinsValue (UserName: string): Promise<string> {
 	return `${totalValue.toFixed(4)}  ${currency}`;
 };
 
-export async function addNewCoin (UserName: string, coinName: string, value: number): Promise<string> {
+export async function addNewCoin (userName: string, coinName: string, value: number): Promise<string> {
 
 	if (isNaN(value)) return 'Value must be a number';
 
-	const { coins } = await UserModel.findOne({ name: UserName });
+	const isUserExist = await checkIfUserExist(userName);
+
+	if ( !isUserExist) {
+		await createUserWithdata(userName, coinName, value);
+		return `new user created:
+		new coin: ${coinName} was added`;
+	}
+
+	const { coins } = await UserModel.findOne({ name: userName });
+
+	console.log('coin', coins);
 
 	const newCoin: Coin = {
 		name: coinName,
@@ -46,16 +44,32 @@ export async function addNewCoin (UserName: string, coinName: string, value: num
 	}
 	const newCoinList = [...coins, newCoin];
 
-	await UserModel.updateOne({ name: UserName }, {
+	await UserModel.updateOne({ name: userName }, {
 		coins: newCoinList
 	});
 
-	return `coin ${coinName} have been succesfully added with quantity of ${value}.
+	return `coin ${coinName} have been successfully added with quantity of ${value}.
 	If you want to change a quantity, please type: 
 	change:coinName=NewValue
 	example:
 	change:bitcoin=11`;
+};
 
+export async function changeCoinQuantity (userName: string, coinName: string, newQuantity: number): Promise<string> {
+
+	if (isNaN(newQuantity)) return 'Value must be a number';
+	const filter = { coins: coinName };
+	const update = { value: 22 };
+
+	console.log(filter);
+
+	let doc = await UserModel.findOneAndUpdate(filter, update, {
+		new: true
+	});
+
+	console.log(doc);
+
+	return `coin ${coinName} have been successfully changed with quantity of ${newQuantity}`;
 };
 
 

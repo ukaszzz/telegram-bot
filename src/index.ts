@@ -1,7 +1,7 @@
 import { Telegraf } from 'telegraf';
 import * as dotenv from 'dotenv';
 import connectToDb from './utils/connectToDb';
-import { addNewCoin, checkCoinsValue } from './records/user.record';
+import { addNewCoin, changeCoinQuantity, checkCoinsValue } from './records/user.record';
 
 connectToDb();
 dotenv.config();
@@ -45,6 +45,12 @@ bot.start(ctx => {
 
 bot.hears(/add:(.+)=(.+)/, async (ctx) => {
 		let success = await addNewCoin(ctx.from.username, ctx.match[1], Number(ctx.match[2]));
+		ctx.reply(success || '');
+	}
+);
+
+bot.hears(/change:(.+)=(.+)/, async (ctx) => {
+		let success = await changeCoinQuantity(ctx.from.username, ctx.match[1], Number(ctx.match[2]));
 		ctx.reply(success || '');
 	}
 );

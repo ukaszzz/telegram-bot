@@ -58,16 +58,14 @@ export async function addNewCoin (userName: string, coinName: string, value: num
 export async function changeCoinQuantity (userName: string, coinName: string, newQuantity: number): Promise<string> {
 
 	if (isNaN(newQuantity)) return 'Value must be a number';
-	const filter = { coins: coinName };
-	const update = { value: 22 };
-
-	console.log(filter);
-
+	const filter = { name: userName, 'coins.name': coinName };
+	const update = { $set: { 'coins.0.value': newQuantity } };
+	
 	let doc = await UserModel.findOneAndUpdate(filter, update, {
 		new: true
 	});
 
-	console.log(doc);
+	if ( !doc) return `you do not have coin: ${coinName}`;
 
 	return `coin ${coinName} have been successfully changed with quantity of ${newQuantity}`;
 };

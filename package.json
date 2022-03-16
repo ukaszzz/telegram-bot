@@ -17,6 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.26.1",
+    "coingecko-api": "^1.0.10",
     "dotenv": "^16.0.0",
     "mongoose": "^6.2.5",
     "telegraf": "^4.7.0"

@@ -1,8 +1,9 @@
 import { UserModel } from '../schema/user.schema';
-import { getPrice } from '../utils/getPrice';
 import { checkIfUserExist } from '../utils/checkIsUserExist';
 import { createUserWithdata } from '../utils/createNewUser';
 import { Coin } from '../model/coin';
+import { User } from '../model/user';
+import { portfolioValue } from '../service/coinGeco';
 
 export async function checkCoinsValue ( UserName: string ): Promise<string> {
 
@@ -10,7 +11,7 @@ export async function checkCoinsValue ( UserName: string ): Promise<string> {
     let totalValue = 0;
 
     for ( const coin of coins ) {
-        const ratio = await getPrice( coin.name );
+        const ratio = await portfolioValue( coin.name );
 
         totalValue = totalValue + Number( ratio ) * coin.value;
     }
@@ -81,6 +82,16 @@ export async function changeCurrency ( userName: string, currency: string ): Pro
     } );
 
     return `Currency change at ${currency}`;
+};
+
+export async function userDetail ( userName: string ): Promise<User> {
+    const result = await UserModel.find( { name: userName } );
+    const user: User = {
+        name: result[0].name,
+        coins: result[0].coins,
+        currency: result[0].currency
+    };
+    return user as User;
 };
 
 

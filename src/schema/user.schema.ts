@@ -1,12 +1,12 @@
-import { Schema, model } from 'mongoose';
+import { model, Schema } from 'mongoose';
 
 const schema = new Schema({
-    name: {type: String, required: true},
+    name: { type: String, required: true },
     coins: [{
-        name: {type: String},
-        value: {type: Number}
+        name: { type: String },
+        value: { type: Number }
     }],
-    currency: String,
+    currency: String
 });
 
-export const UserModel = model('User',schema)
+export const UserModel = model('User', schema);

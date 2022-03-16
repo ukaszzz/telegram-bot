@@ -1,6 +1,6 @@
-import axios from "axios";
+import axios from 'axios';
 
-const url = "https://api.coincap.io/v2"
+const url = 'https://api.coincap.io/v2';
 
 export const getPrice = async (coin: string): Promise<number | undefined> => {
     try {

@@ -1,12 +1,12 @@
-import * as mongoose from "mongoose";
-import config from "../config/default";
+import * as mongoose from 'mongoose';
+import config from '../config/default';
 
-async function connectToDb() {
+async function connectToDb () {
     try {
         await mongoose.connect(config.dbConnectUrl);
         console.log('db connected');
     } catch (e) {
-        process.exit(1)
+        process.exit(1);
     }
 };
 

@@ -33,7 +33,7 @@ main options:
 - run you database
 - Run `npm install`
 - Create `.env` file and add your bot key
-- Run `npm dev`
+- Run `npm start`
 
 ## License
 

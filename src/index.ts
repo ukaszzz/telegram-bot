@@ -22,9 +22,12 @@ const bot = new Telegraf( process.env.BOT_TOKEN );
 bot.start( async ctx => {
     ctx.reply( `🔥Wellcome in coin bot!🔥
     
-	☑️ You can check your account,
-	☑️ add new coin with value
-	☑️ or choose your currency`, {
+	☑️ You can check your account
+	☑️ Add new coin with value
+	☑️ Delete coin
+	☑️ Change coin quantity
+	☑️ Check the value of all coins
+	☑️ Choose your currency`, {
         'reply_markup': {
             'inline_keyboard': [
                 [
@@ -57,7 +60,7 @@ bot.start( async ctx => {
                         'callback_data': 'chooseCurrency'
                     },
                     {
-                        'text': '✏️ Change coin value',
+                        'text': '✏️ Change coin quantity',
                         'callback_data': 'changeCoin'
                     }
                 ]
@@ -100,7 +103,7 @@ bot.help( async ctx => {
                         'callback_data': 'chooseCurrency'
                     },
                     {
-                        'text': '✏️ Change coin value',
+                        'text': '✏️ Change coin quantity',
                         'callback_data': 'changeCoin'
                     }
                 ],

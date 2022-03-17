@@ -3,7 +3,7 @@
 The Telegram bot is a simple bot, so you can track your cryptocurrencies.  
 (temporary top 200 currencies from market cap)
 
-[![Bot](readme-assets/start.png 'bot screen shot')]
+![Bot](readme-assets/start.png 'bot screen shot')  
 main options:
 
 - adding coins with quantity

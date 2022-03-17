@@ -3,46 +3,49 @@ import { checkIfUserExist } from '../utils/checkIsUserExist';
 import { createUserWithdata } from '../utils/createNewUser';
 import { Coin } from '../model/coin';
 import { User } from '../model/user';
-import { portfolioValue } from '../service/coinGeco';
+import { coinsList } from '../model/coinsList';
 
 export async function checkCoinsValue ( UserName: string ): Promise<string> {
 
     const { coins, currency } = await UserModel.findOne( { name: UserName } );
     let totalValue = 0;
 
-    for ( const coin of coins ) {
-        const ratio = await portfolioValue( coin.name );
+    console.log( coins );
+    const coinsListToCheck = coins.map( ( coin: Coin ) => coin.symbol );
 
-        totalValue = totalValue + Number( ratio ) * coin.value;
-    }
+    console.log( coinsListToCheck );
+
+    // const ratio = await getCoinsMarketValue( coins );
 
     return `${totalValue.toFixed( 4 )}  ${currency}`;
-};
+}
 
 export async function addNewCoin ( userName: string, coinName: string, value: number ): Promise<string> {
 
     if ( isNaN( value ) ) return '⛔Value must be a number⛔';
 
     const isUserExist = await checkIfUserExist( userName );
-
+    const coin = coinsList.find( coin => coin.name.toLocaleLowerCase() === coinName.toLocaleLowerCase() );
     if ( !isUserExist ) {
-        await createUserWithdata( userName, coinName, value );
+        await createUserWithdata( userName, coin.id, coin.name, coin.symbol, value );
         return `👤👤👤 new user created:
 		new coin: 💰${coinName}💰 was added`;
     }
-
     const { coins } = await UserModel.findOne( { name: userName } );
-
-    console.log( 'coin', coins );
-
-    const newCoin: Coin = {
-        name: coinName,
-        value: value
-    };
+    
+    if ( !coin ) return '⛔unexpected error, please try letter⛔';
 
     for ( const coin of coins ) {
         if ( coin.name === coinName ) return '⛔coin already added⛔';
     }
+
+    const newCoin: Coin = {
+        id: coin.id,
+        name: coinName,
+        symbol: coin.symbol,
+        value: value
+    };
+
     const newCoinList = [ ...coins, newCoin ];
 
     await UserModel.updateOne( { name: userName }, {
@@ -55,7 +58,7 @@ export async function addNewCoin ( userName: string, coinName: string, value: nu
 	change:coinName=NewValue
 	example:
 	change:bitcoin=11`;
-};
+}
 
 export async function changeCoinQuantity ( userName: string, coinName: string, newQuantity: number ): Promise<string> {
 
@@ -82,7 +85,7 @@ export async function changeCurrency ( userName: string, currency: string ): Pro
     } );
 
     return `Currency change at ${currency}`;
-};
+}
 
 export async function userDetail ( userName: string ): Promise<User> {
     const result = await UserModel.find( { name: userName } );
@@ -92,7 +95,7 @@ export async function userDetail ( userName: string ): Promise<User> {
         currency: result[0].currency
     };
     return user as User;
-};
+}
 
 
 

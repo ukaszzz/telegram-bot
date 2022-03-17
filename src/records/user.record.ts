@@ -1,9 +1,7 @@
 import { UserModel } from '../schema/user.schema';
-import { checkIfUserExist } from '../utils/checkIsUserExist';
-import { createUserWithdata } from '../utils/createNewUser';
 import { Coin } from '../model/coin';
 import { User } from '../model/user';
-import { coinsList } from '../model/coinsList';
+import { CoinsList } from '../model/coinsList';
 import { getCoinsMarketValue } from '../service/coinGeco';
 import { getMarketPriceWithCurrency } from '../utils/getMarketPriceWithCurrency';
 
@@ -17,11 +15,32 @@ export async function checkCoinsValue ( UserName: string ): Promise<string> {
     return `${totValOnCurency.toFixed( 4 )}  ${currency}`;
 }
 
+export async function createUserWithdata ( name: string, id: string, coinName: string, symbol: string, coinValue: number
+): Promise<void> {
+
+    const user = new UserModel( {
+        name,
+        coins: {
+            id: id,
+            name: coinName,
+            symbol: symbol,
+            value: coinValue
+        },
+        currency: 'USD'
+    } );
+    await user.save();
+}
+
+export async function checkIfUserExist ( UserName: string ): Promise<boolean> {
+    const user = await UserModel.findOne( { name: UserName } );
+    return !!user;
+}
+
 export async function addNewCoin ( userName: string, coinName: string, value: number ): Promise<string> {
     if ( isNaN( value ) ) return '⛔Value must be a number⛔';
 
     const isUserExist = await checkIfUserExist( userName );
-    const coin = coinsList.find( coin => coin.name.toLocaleLowerCase() === coinName.toLocaleLowerCase() );
+    const coin = CoinsList.find( coin => coin.name.toLocaleLowerCase() === coinName.toLocaleLowerCase() );
 
     if ( !isUserExist ) {
         await createUserWithdata( userName, coin.id, coin.name, coin.symbol, value );
@@ -80,7 +99,7 @@ export async function changeCoinQuantity ( userName: string, coinName: string, n
     if ( !doc ) return `⛔You do not have coin: ${coinName}⛔`;
 
     return `Quantity od coin: ${coinName} have been successfully changed of ${newQuantity}`;
-};
+}
 
 export async function changeCurrency ( userName: string, currency: string ): Promise<string> {
 

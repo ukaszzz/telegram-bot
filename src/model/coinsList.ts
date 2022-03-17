@@ -1,4 +1,4 @@
-export const coinsList: { id: string, name: string, symbol: string }[] = [
+export const CoinsList: { id: string, name: string, symbol: string }[] = [
     { id: 'bitcoin', name: 'Bitcoin', symbol: 'btc' },
     { id: 'ethereum', name: 'Ethereum', symbol: 'eth' },
     { id: 'tether', name: 'Tether', symbol: 'usdt' },

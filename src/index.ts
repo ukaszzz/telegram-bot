@@ -6,45 +6,18 @@ import {
     changeCoinQuantity,
     changeCurrency,
     checkCoinsValue,
+    checkIfUserExist,
     removeCoin,
     userDetail
 } from './records/user.record';
-import { coinsList } from './model/coinsList';
-import { Currencies } from './model/currencies';
-import { checkIfUserExist } from './utils/checkIsUserExist';
+import { CoinsList } from './model/coinsList';
+import { CurrenciesAvailable } from './model/currenciesAvailable';
+import { DefaultMessages } from './model/defaultMessages';
 
 connectToDb();
 dotenv.config();
 
 const bot = new Telegraf( process.env.BOT_TOKEN );
-
-// bot.command('quit', (ctx) => {
-//   // Explicit usage
-//   ctx.telegram.leaveChat(ctx.message.chat.id)
-//
-//   // Using context shortcut
-//   ctx.leaveChat()
-// })
-
-// bot.on('text', (ctx) => {
-//   // Explicit usage
-//   console.log(ctx.from)
-//   // Using context shortcut
-//   ctx.reply(`Hello men`);
-//   const coins = [
-//     {
-//       name: 'bitcoin',
-//       value: 12
-//     },
-//     {
-//       name: 'bitcoin',
-//       value: 10
-//     }
-//   ]
-//
-//   createUserWithdata(ctx.from.username, coins, 'USD')
-//
-// })
 
 bot.start( async ctx => {
     ctx.reply( `🔥Wellcome in coin bot!🔥
@@ -74,7 +47,7 @@ bot.start( async ctx => {
                         'callback_data': 'check'
                     },
                     {
-                        'text': '❌ Delete coin',
+                        'text': '❌ Remove coin',
                         'callback_data': 'removeCoin'
                     }
                 ],
@@ -84,7 +57,7 @@ bot.start( async ctx => {
                         'callback_data': 'chooseCurrency'
                     },
                     {
-                        'text': '✏️ Check coin value',
+                        'text': '✏️ Change coin value',
                         'callback_data': 'changeCoin'
                     }
                 ]
@@ -117,7 +90,7 @@ bot.help( async ctx => {
                         'callback_data': 'check'
                     },
                     {
-                        'text': '❌ Delete coin',
+                        'text': '❌ Remove coin',
                         'callback_data': 'removeCoin'
                     }
                 ],
@@ -127,7 +100,7 @@ bot.help( async ctx => {
                         'callback_data': 'chooseCurrency'
                     },
                     {
-                        'text': '✏️ Check coin value',
+                        'text': '✏️ Change coin value',
                         'callback_data': 'changeCoin'
                     }
                 ],
@@ -144,6 +117,12 @@ bot.help( async ctx => {
 } );
 
 bot.action( 'check', async ctx => {
+    const isUserExist = await checkIfUserExist( ctx.from.username );
+
+    if ( !isUserExist ) {
+        return ctx.reply( DefaultMessages.NOT_USER );
+    }
+
     const totalValue = await checkCoinsValue( ctx.from.username );
 
     ctx.reply( `
@@ -181,8 +160,7 @@ bot.action( 'removeCoin', async ctx => {
 	✏remove:coin✏️
 	
 	example:
-	remove:Bitcoin
- 	`,
+	remove:Bitcoin`,
         {
             'reply_markup': {
                 'inline_keyboard': [
@@ -203,7 +181,7 @@ bot.action( 'chooseCurrency', async ctx => {
 	
 	✏️currency:CURRENCY✏️
 	
-	example: s
+	example:
 	currency: USD
 	` );
 } );
@@ -231,7 +209,7 @@ bot.action( 'coinList', async ctx => {
 } );
 
 bot.action( 'showListCoins', ctx => {
-    const coinList = coinsList.map( el => `🔹${el.name} \n` ).toString().replace( /,/g, '' );
+    const coinList = CoinsList.map( el => `🔹${el.name} \n` ).toString().replace( /,/g, '' );
     ctx.reply( `
        ${coinList}
     ` );
@@ -239,7 +217,7 @@ bot.action( 'showListCoins', ctx => {
 
 bot.action( 'showListCurrency', ctx => {
 
-    const currencies = Currencies.map( el => `🔹${el} \n` ).toString().replace( /,/g, '' );
+    const currencies = CurrenciesAvailable.map( el => `🔹${el} \n` ).toString().replace( /,/g, '' );
     ctx.reply( `
        ${currencies}
     ` );
@@ -249,7 +227,7 @@ bot.hears( [ /add:(.+)=(.+)/, /Add:(.+)=(.+)/ ], async ( ctx ) => {
         const coinName: string = ctx.match[1];
         const coinValue: number | undefined = Number( ctx.match[2] );
 
-        if ( !coinsList.some( el => el.name.toLocaleLowerCase() === coinName.toLocaleLowerCase() ) ) {
+        if ( !CoinsList.some( el => el.name.toLocaleLowerCase() === coinName.toLocaleLowerCase() ) ) {
             return ctx.reply( `⛔Unfortunately, there is no coin with that name⛔
             Would you like to see the list of available?`, {
                 'reply_markup': {
@@ -266,18 +244,22 @@ bot.hears( [ /add:(.+)=(.+)/, /Add:(.+)=(.+)/ ], async ( ctx ) => {
         }
 
         let success = await addNewCoin( ctx.from.username, coinName, coinValue );
-        ctx.reply( success || '⛔unexpected error⛔' );
+        ctx.reply( success || DefaultMessages.UNEXPECTED_ERROR );
     }
 );
 
 bot.hears( [ /remove:(.+)/, /Remove:(.+)/ ], async ( ctx ) => {
+        const isUserExist = await checkIfUserExist( ctx.from.username );
+
+        if ( !isUserExist ) {
+            return ctx.reply( DefaultMessages.NOT_USER );
+        }
         const coinName: string = ctx.match[1];
         const { coins } = await userDetail( ctx.from.username );
         const coinList = (coins.map( coin => coin.name ));
         console.log( coinList );
         if ( !coinList.some( el => el.toLocaleLowerCase() === coinName.toLocaleLowerCase() ) ) {
-            return ctx.reply( `⛔Unfortunately, there is no coin with that name⛔
-            Would you like to see the list of your coins?`, {
+            return ctx.reply( `⛔Unfortunately, there is no coin with that name⛔\n Would you like to see the list of your coins?`, {
                 'reply_markup': {
                     'inline_keyboard': [
                         [
@@ -292,7 +274,7 @@ bot.hears( [ /remove:(.+)/, /Remove:(.+)/ ], async ( ctx ) => {
         }
 
         let success = await removeCoin( ctx.from.username, coinName );
-        ctx.reply( `${success ? success : '⛔unexpected error⛔'}`, {
+        ctx.reply( `${success ? success : DefaultMessages.UNEXPECTED_ERROR}`, {
             'reply_markup': {
                 'inline_keyboard': [
                     [
@@ -309,14 +291,19 @@ bot.hears( [ /remove:(.+)/, /Remove:(.+)/ ], async ( ctx ) => {
 
 bot.hears( [ /change:(.+)=(.+)/, /Change:(.+)=(.+)/ ], async ( ctx ) => {
         let success = await changeCoinQuantity( ctx.from.username, ctx.match[1], Number( ctx.match[2] ) );
-        ctx.reply( success || '' );
+        ctx.reply( success || DefaultMessages.UNEXPECTED_ERROR );
     }
 );
 
 bot.hears( [ /currency:(.+)/, /Currency:(.+)/ ], async ( ctx ) => {
+        const isUserExist = await checkIfUserExist( ctx.from.username );
+
+        if ( !isUserExist ) {
+            return ctx.reply( DefaultMessages.NOT_USER );
+        }
         const currency = ctx.match[1];
 
-        if ( !Currencies.some( el => el.toLocaleLowerCase() === currency.toLocaleLowerCase() ) ) {
+        if ( !CurrenciesAvailable.some( el => el.toLocaleLowerCase() === currency.toLocaleLowerCase() ) ) {
             return ctx.reply( `⛔Unfortunately, passed currency is not available⛔
             Would you like to see the list of available?`, {
                 'reply_markup': {
@@ -340,8 +327,7 @@ bot.action( 'userDetail', async ( ctx ) => {
         const isUserExist = await checkIfUserExist( ctx.from.username );
 
         if ( !isUserExist ) {
-            return ctx.reply( `⛔You are not user.⛔
-            If you would like to be one, add your first coin.` );
+            return ctx.reply( DefaultMessages.NOT_USER );
         }
 
         const { name, coins, currency } = await userDetail( ctx.from.username );
@@ -359,8 +345,7 @@ bot.action( 'showUserCoinsList', async ( ctx ) => {
         const isUserExist = await checkIfUserExist( ctx.from.username );
 
         if ( !isUserExist ) {
-            return ctx.reply( `⛔You are not user.⛔
-            If you would like to be one, add your first coin.` );
+            return ctx.reply( DefaultMessages.NOT_USER );
         }
 
         const { coins } = await userDetail( ctx.from.username );

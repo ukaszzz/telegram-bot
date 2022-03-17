@@ -4,5 +4,3 @@ export interface Coin {
     symbol: string,
     value: number
 }
-
-export type Currencies = 'USD' | 'PLN' | 'EUR'

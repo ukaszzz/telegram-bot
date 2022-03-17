@@ -1,8 +1,9 @@
-import { Coin, Currencies } from './coin';
+import { Coin } from './coin';
+import { CurrenciesAvailable } from './currenciesAvailable';
 
 export interface User {
     name: string,
     coins: Coin[],
-    currency: Currencies
+    currency: CurrenciesAvailable
 }
 

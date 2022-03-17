@@ -1,8 +1,14 @@
 import { Telegraf } from 'telegraf';
 import * as dotenv from 'dotenv';
 import connectToDb from './utils/connectToDb';
-import { addNewCoin, changeCoinQuantity, changeCurrency, checkCoinsValue, userDetail } from './records/user.record';
-import { coinList } from './service/coinGeco';
+import {
+    addNewCoin,
+    changeCoinQuantity,
+    changeCurrency,
+    checkCoinsValue,
+    removeCoin,
+    userDetail
+} from './records/user.record';
 import { coinsList } from './model/coinsList';
 import { Currencies } from './model/currencies';
 import { checkIfUserExist } from './utils/checkIsUserExist';
@@ -57,12 +63,19 @@ bot.start( async ctx => {
                 ],
                 [
                     {
+                        'text': '💎 Add new coin',
+                        'callback_data': 'addNew'
+                    }
+
+                ],
+                [
+                    {
                         'text': '📉 Check account value',
                         'callback_data': 'check'
                     },
                     {
-                        'text': '💎 Add new coin',
-                        'callback_data': 'addNew'
+                        'text': '❌ Delete coin',
+                        'callback_data': 'removeCoin'
                     }
                 ],
                 [
@@ -86,12 +99,26 @@ bot.help( async ctx => {
             'inline_keyboard': [
                 [
                     {
+                        'text': '👤 Show user details',
+                        'callback_data': 'userDetail'
+                    }
+
+                ],
+                [
+                    {
+                        'text': '💎 Add new coin',
+                        'callback_data': 'addNew'
+                    }
+
+                ],
+                [
+                    {
                         'text': '📉 Check account value',
                         'callback_data': 'check'
                     },
                     {
-                        'text': '💎 Add new coin',
-                        'callback_data': 'addNew'
+                        'text': '❌ Delete coin',
+                        'callback_data': 'removeCoin'
                     }
                 ],
                 [
@@ -103,13 +130,6 @@ bot.help( async ctx => {
                         'text': '✏️ Check coin value',
                         'callback_data': 'changeCoin'
                     }
-                ],
-                [
-                    {
-                        'text': '👤 Show user details',
-                        'callback_data': 'userDetail'
-                    }
-
                 ],
                 [
                     {
@@ -154,6 +174,29 @@ bot.action( 'addNew', async ctx => {
         } );
 } );
 
+bot.action( 'removeCoin', async ctx => {
+    ctx.reply( `
+	To delete coin, please type:
+	 
+	✏remove:coin✏️
+	
+	example:
+	remove:Bitcoin
+ 	`,
+        {
+            'reply_markup': {
+                'inline_keyboard': [
+                    [
+                        {
+                            'text': '📖 show yours coinList',
+                            'callback_data': 'showUserCoinsList'
+                        }
+                    ]
+                ]
+            }
+        } );
+} );
+
 bot.action( 'chooseCurrency', async ctx => {
     ctx.reply( `
 	To change your currency, please type: 
@@ -188,7 +231,7 @@ bot.action( 'coinList', async ctx => {
 } );
 
 bot.action( 'showListCoins', ctx => {
-    const coinList = coinsList.map( el => `🔹${el} \n` ).toString().replace( /,/g, '' );
+    const coinList = coinsList.map( el => `🔹${el.name} \n` ).toString().replace( /,/g, '' );
     ctx.reply( `
        ${coinList}
     ` );
@@ -206,7 +249,7 @@ bot.hears( [ /add:(.+)=(.+)/, /Add:(.+)=(.+)/ ], async ( ctx ) => {
         const coinName: string = ctx.match[1];
         const coinValue: number | undefined = Number( ctx.match[2] );
 
-        if ( !coinsList.some( el => el.toLocaleLowerCase() === coinName.toLocaleLowerCase() ) ) {
+        if ( !coinsList.some( el => el.name.toLocaleLowerCase() === coinName.toLocaleLowerCase() ) ) {
             return ctx.reply( `⛔Unfortunately, there is no coin with that name⛔
             Would you like to see the list of available?`, {
                 'reply_markup': {
@@ -224,6 +267,43 @@ bot.hears( [ /add:(.+)=(.+)/, /Add:(.+)=(.+)/ ], async ( ctx ) => {
 
         let success = await addNewCoin( ctx.from.username, coinName, coinValue );
         ctx.reply( success || '⛔unexpected error⛔' );
+    }
+);
+
+bot.hears( [ /remove:(.+)/, /Remove:(.+)/ ], async ( ctx ) => {
+        const coinName: string = ctx.match[1];
+        const { coins } = await userDetail( ctx.from.username );
+        const coinList = (coins.map( coin => coin.name ));
+        console.log( coinList );
+        if ( !coinList.some( el => el.toLocaleLowerCase() === coinName.toLocaleLowerCase() ) ) {
+            return ctx.reply( `⛔Unfortunately, there is no coin with that name⛔
+            Would you like to see the list of your coins?`, {
+                'reply_markup': {
+                    'inline_keyboard': [
+                        [
+                            {
+                                'text': '📖 show yours coinList',
+                                'callback_data': 'showUserCoinsList'
+                            }
+                        ]
+                    ]
+                }
+            } );
+        }
+
+        let success = await removeCoin( ctx.from.username, coinName );
+        ctx.reply( `${success ? success : '⛔unexpected error⛔'}`, {
+            'reply_markup': {
+                'inline_keyboard': [
+                    [
+                        {
+                            'text': '📖 show yours coinList',
+                            'callback_data': 'showUserCoinsList'
+                        }
+                    ]
+                ]
+            }
+        } );
     }
 );
 
@@ -273,7 +353,21 @@ bot.action( 'userDetail', async ( ctx ) => {
          💎 coins:\n ${coinList}
          💵 currency: ${currency}` );
     }
-)
-;
+);
+
+bot.action( 'showUserCoinsList', async ( ctx ) => {
+        const isUserExist = await checkIfUserExist( ctx.from.username );
+
+        if ( !isUserExist ) {
+            return ctx.reply( `⛔You are not user.⛔
+            If you would like to be one, add your first coin.` );
+        }
+
+        const { coins } = await userDetail( ctx.from.username );
+        const coinList = (coins.map( coin => `     🔸${coin.name}\n` ))
+            .toString().replace( /,/g, '' );
+        ctx.reply( `user coins:\n${coinList}` );
+    }
+);
 
 bot.launch();
